@@ -1,10 +1,14 @@
+import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
+import 'package:exp02/pages/analysis_page.dart';
 import 'package:exp02/pages/calendar_page.dart';
 import 'package:exp02/pages/home_page.dart';
+import 'package:exp02/pages/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -20,10 +24,21 @@ class MyApp extends StatelessWidget {
   // 寫 list 和 統計用 func()
   // 資料連結 UI
 
+  // UI 完善
+  // 可以統計總金額
+  // List 新增滑動刪除供功能
+  // 提供新增資料頁面
+
+  // 修正統計方式
+  // 將資料分為收入和輸出
+
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => MyColor(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MyColor()),
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         home: MyHomePage(),
@@ -40,7 +55,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List _pages = [MyExpensePage(), MyCalendarPage()];
+  final List _pages = [MyExpensePage(), MyCalendarPage(), MyAnalysisPage(), MySettingPage()];
   int now = 0;
 
   @override
@@ -74,15 +89,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   },
                   child: Column(
                     children: [
-                      Icon(Icons.home, size: 24, color: Color(0xFF000000)),
+                      Icon(Icons.home, size: 24, color: (now == 0) ? Colors.black87 : my_color.hint2),
                       SizedBox(height: 2,),
-                      Text("首頁", style: TextStyle(fontSize: 12),)
+                      Text("首頁", style: TextStyle(fontSize: 12, color: (now == 0) ? Colors.black87 : my_color.hint2),)
                     ],
                   ),
                 ),
                 SizedBox(width: 25,),
 
-                InkWell(
+                GestureDetector(
                   onTap: () {
                     setState(() {
                       now = 1;
@@ -90,29 +105,43 @@ class _MyHomePageState extends State<MyHomePage> {
                   },
                   child: Column(
                     children: [
-                      Icon(Icons.calendar_today, size: 24, color: Color(0xFF9F9F9F)),
+                      Icon(Icons.calendar_today, size: 24, color: (now == 1) ? Colors.black87 : my_color.hint2),
                       SizedBox(height: 2,),
-                      Text("日曆", style: TextStyle(fontSize: 12),)
+                      Text("日曆", style: TextStyle(fontSize: 12, color: (now == 1) ? Colors.black87 : my_color.hint2),)
                     ],
                   ),
                 ),
                 SizedBox(width: 25,),
 
-                Column(
-                  children: [
-                    Icon(Icons.analytics, size: 24, color: Color(0xFF9F9F9F)),
-                    SizedBox(height: 2,),
-                    Text("統計", style: TextStyle(fontSize: 12),)
-                  ],
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      now = 2;
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Icon(Icons.analytics, size: 24, color: (now == 2) ? Colors.black87 : my_color.hint2),
+                      SizedBox(height: 2,),
+                      Text("統計", style: TextStyle(fontSize: 12, color: (now == 2) ? Colors.black87 : my_color.hint2),)
+                    ],
+                  ),
                 ),
                 SizedBox(width: 25,),
 
-                Column(
-                  children: [
-                    Icon(Icons.settings, size: 24, color: Color(0xFF9F9F9F)),
-                    SizedBox(height: 2,),
-                    Text("設定", style: TextStyle(fontSize: 12),)
-                  ],
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      now = 3;
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Icon(Icons.settings, size: 24, color: (now == 3) ? Colors.black87 : my_color.hint2),
+                      SizedBox(height: 2,),
+                      Text("設定", style: TextStyle(fontSize: 12, color: (now == 3) ? Colors.black87 : my_color.hint2),)
+                    ],
+                  ),
                 ),
               ],
             ),
