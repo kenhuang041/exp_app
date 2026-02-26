@@ -3,34 +3,65 @@ import 'package:flutter/material.dart';
 import 'db_helper.dart';
 
 class ExpenseProvider with ChangeNotifier {
-  List<Day> _monthData = []; // 每個月份的資料
+  List<(DateTime, List<Day>)> _monthData = []; // 每個月份的資料
+  // .first => $1
+  // .second => $2
+  List<Day> _nowMonthData = [];
   Day? _nowData; // 當天的資料
   double? _totalCost;
 
-  List<Day> get monthData => _monthData;
+  List<(DateTime, List<Day>)> get monthData => _monthData;
+  List<Day> get nowMonthData => _nowMonthData;
   Day? get nowData => _nowData;
   double? get totalCost => _totalCost;
 
   final DatabaseHelper _helper = DatabaseHelper();
 
-  Future<void> setMonthData(DateTime now) async {
-    List<TransactionItem> all = await _helper.getMonth(now);
-    List<Day> tmp = [];
+  Future<void> setAllMonthData() async {
+    DateTime? firstDate = await _helper.getFirstTransactionDate() ?? DateTime.now();
+    DateTime nowDate = DateTime.now();
+    List<TransactionItem> all = await _helper.getAll();
 
-    int days = DateTime(now.year, now.month + 1, 0).day; // .day 作用？
-    for(int i=1; i<=days; i++) { // 要改成第一次 啟動的月份 到 現在的月份
-      tmp.add(Day(
-        date: DateTime(now.year, now.month, i),
-        items: []
-      ));
+    _monthData.clear();
+
+    int total = (nowDate.year - firstDate.year) * 12 + (nowDate.month - firstDate.month);
+
+    for(int i=0; i<=total; i++) {
+      DateTime nowMonth = DateTime(firstDate.year, firstDate.month + i);
+      List<TransactionItem> monthData = await _helper.getMonth(nowMonth);
+
+      int daysInMonth = DateTime(nowMonth.year, nowMonth.month + 1, 0).day;
+      List<Day> tmp = List.generate(daysInMonth, (idx) => Day(date: DateTime(nowMonth.year, nowMonth.month, idx+1), items: []));
+
+      for(var transaction in monthData) {
+        int dayIndex = transaction.date.day - 1;
+        if (dayIndex >= 0 && dayIndex < tmp.length) {
+          tmp[dayIndex].items.add(transaction);
+        }
+      }
+
+      if (tmp.isNotEmpty) {
+        var pair = (nowMonth, tmp);
+        _monthData.add(pair);
+      }
+      else print('error of tmp2');
     }
 
-    for(var item in all) { // 把這個月的資料都丟進去
-      int idx = item.date.day - 1;
-      tmp[idx].items.add(item);
+    notifyListeners();
+  }
+
+  Future<void> setNowMonth() async {
+    try {
+      DateTime nowDate = DateTime.now();
+      var tmp = _monthData.firstWhere(
+        (x) => (x.$1.year == nowDate.year  && x.$1.month == nowDate.month)
+      );
+      _nowMonthData = tmp.$2;
+    } catch (e) {
+      print("error of getNowMonth");
+      _nowMonthData = [];
     }
 
-    _monthData = tmp;
     notifyListeners();
   }
 
@@ -47,6 +78,10 @@ class ExpenseProvider with ChangeNotifier {
 
   // 計算當天總和
   Future<void> countTotalCost() async {
+    if(_nowData == null) {
+      _totalCost = 0;
+      return;
+    }
     double total = _nowData!.totalIncome - _nowData!.totalExpense;
     _totalCost = total;
   }
@@ -57,7 +92,12 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   Future<void> remove(TransactionItem item) async {
-    await _helper.delete(item.id!);
+    await _helper.delete(item);
     await setDayData(item.date); // 可調整
+  }
+
+  Future<void> clearAll() async {
+    await _helper.clear();
+    notifyListeners();
   }
 }

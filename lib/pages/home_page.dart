@@ -7,6 +7,7 @@ import 'package:exp02/models/color.dart';
 import 'package:exp02/pages/add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../models/transaction.dart';
 
@@ -185,7 +186,8 @@ class _MyExpensePageState extends State<MyExpensePage> {
             children: [
               Text("詳細資訊", style: TextStyle(fontSize: 14),),
               GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  // print("資料庫路徑在此: ${await getDatabasesPath()}");
                   setState(() {
                     isSort = !isSort;
                   });

@@ -49,9 +49,37 @@ class DatabaseHelper {
   }
 
   // 刪除資料
-  Future<int> delete(int id) async {
+  Future<int> delete(TransactionItem item) async {
     var db = await database;
-    return await db.delete('transactions',  where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+        'transactions',
+        where: 'name = ? AND amount = ? AND date = ? AND type = ?',
+        whereArgs: [item.name, item.amount, item.date.toIso8601String(), item.type]
+    );
+  }
+
+  Future<void> clear() async {
+    var db = await database;
+    await db.delete('transactions');
+  }
+
+  // 取得最早的一筆資料
+  Future<DateTime?> getFirstTransactionDate() async {
+    var db = await database;
+    List<Map<String, dynamic>> mp = await db.query(
+      'transactions',
+      orderBy: "date ASC",
+      limit: 1,
+    );
+
+    if(mp.isNotEmpty) return DateTime.parse(mp.first['date']);
+    else return null;
+  }
+
+  Future<List<TransactionItem>> getAll() async {
+    var db = await database;
+    List<Map<String, dynamic>> mp = await db.query('transactions',);
+    return List.generate(mp.length, (x) => TransactionItem.fromMap(mp[x]));
   }
 
   // 取得特定一天的資料
@@ -77,7 +105,7 @@ class DatabaseHelper {
     List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       where: "date LIKE ?",
-      whereArgs: ['$str']
+      whereArgs: ['$str%']
     );
 
     return maps.map((x) => TransactionItem.fromMap(x)).toList();
