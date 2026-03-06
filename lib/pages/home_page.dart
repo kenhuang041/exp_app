@@ -6,6 +6,7 @@ import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:exp02/pages/add_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -83,12 +84,23 @@ class _MyExpensePageState extends State<MyExpensePage> {
               color: my_color.item,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("剩餘金額", style: TextStyle(color: my_color.text, fontSize: 12),),
-                Text("\$${expense_data.totalCost}", style: TextStyle(color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold),)
-              ],
+            child: AnimatedOpacity(
+              opacity: (expense_data.nowData == null) ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 500),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("剩餘金額", style: TextStyle(color: my_color.text, fontSize: 12),),
+                  Text(
+                    (expense_data.nowData == null) ? "" : "\$${expense_data.totalCost}",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
 
@@ -187,7 +199,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
               Text("詳細資訊", style: TextStyle(fontSize: 14),),
               GestureDetector(
                 onTap: () async {
-                  // print("資料庫路徑在此: ${await getDatabasesPath()}");
+                  // /Users/ken/Library/Developer/CoreSimulator/Devices/75D22BAB-FA57-4BE5-896B-C52C900A29DD/data/Containers/Data/Application/1FD932C7-2545-48D0-99B6-52FF0EFBCDC5/Documents
                   setState(() {
                     isSort = !isSort;
                   });
@@ -212,19 +224,30 @@ class _MyExpensePageState extends State<MyExpensePage> {
             child: MediaQuery.removePadding(
               context: context,
               removeTop: true,
-              child: ListView.builder(
-                itemCount: (!isSort) ? (expense_data.nowData?.items.length ?? 0) : expense_data.nowData!.getAllTags.length, // null則資料數為0
-                itemBuilder: (context, index) {
-                  final item = expense_data.nowData!.items[index];
+              child: (expense_data.nowData == null)
+                ? Container()
+                : AnimationLimiter(
+                    key: ValueKey(isSort),
+                    child: ListView.builder(
+                      key: ValueKey("list_$isSort"),
+                      itemCount: (!isSort) ? (expense_data.nowData?.items.length ?? 0) : expense_data.nowData!.getAllTags.length, // null則資料數為0
+                      itemBuilder: (context, index) {
+                        final item = expense_data.nowData!.items[index];
+                        // print("123");
 
-                  if(!isSort) {
-                    return MyListItemPage(item: item);
-                  }
-                  else {
-                    return MyListGroupPage(tagName: expense_data.nowData!.getAllTags[index], today: expense_data.nowData!);
-                  }
-                }
-              )
+                        return AnimationConfiguration.staggeredList(
+                          position: index,
+                          duration: const Duration(milliseconds: 400),
+                          child: SlideAnimation(
+                            verticalOffset: 50.0,
+                            child: FadeInAnimation(
+                              child: (!isSort) ? MyListItemPage(item: item) : MyListGroupPage(tagName: expense_data.nowData!.getAllTags[index], today: expense_data.nowData!)
+                            )
+                          )
+                        );
+                      }
+                    ),
+                 )
             )
           )
         ],

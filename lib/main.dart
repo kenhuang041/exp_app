@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
   // 修正統計方式
   // 將資料分為收入和輸出
 
+  // /Users/ken/Library/Developer/CoreSimulator/Devices/75D22BAB-FA57-4BE5-896B-C52C900A29DD/data/Containers/Data/Application/1FD932C7-2545-48D0-99B6-52FF0EFBCDC5/Documents
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -56,7 +57,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List _pages = [MyExpensePage(), MyCalendarPage(), MyAnalysisPage(), MySettingPage()];
-  int now = 1;
+  int now = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40,vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 46, vertical: 20),
           child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

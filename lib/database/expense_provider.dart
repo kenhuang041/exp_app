@@ -7,6 +7,7 @@ class ExpenseProvider with ChangeNotifier {
   // .first => $1
   // .second => $2
   List<Day> _nowMonthData = [];
+  DateTime _firstDate = DateTime.now();
   Day? _nowData; // 當天的資料
   double? _totalCost;
 
@@ -14,20 +15,20 @@ class ExpenseProvider with ChangeNotifier {
   List<Day> get nowMonthData => _nowMonthData;
   Day? get nowData => _nowData;
   double? get totalCost => _totalCost;
+  DateTime get firstDate => _firstDate;
 
   final DatabaseHelper _helper = DatabaseHelper();
 
   Future<void> setAllMonthData() async {
-    DateTime? firstDate = await _helper.getFirstTransactionDate() ?? DateTime.now();
     DateTime nowDate = DateTime.now();
     List<TransactionItem> all = await _helper.getAll();
 
     _monthData.clear();
 
-    int total = (nowDate.year - firstDate.year) * 12 + (nowDate.month - firstDate.month);
+    int total = (nowDate.year - _firstDate.year) * 12 + (nowDate.month - _firstDate.month);
 
     for(int i=0; i<=total; i++) {
-      DateTime nowMonth = DateTime(firstDate.year, firstDate.month + i);
+      DateTime nowMonth = DateTime(_firstDate.year, _firstDate.month + i);
       List<TransactionItem> monthData = await _helper.getMonth(nowMonth);
 
       int daysInMonth = DateTime(nowMonth.year, nowMonth.month + 1, 0).day;
@@ -63,6 +64,10 @@ class ExpenseProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> setFirstDate() async {
+    _firstDate = await _helper.getFirstTransactionDate() ?? DateTime.now();
   }
 
   // 取得當天資料
