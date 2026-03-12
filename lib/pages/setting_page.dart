@@ -1,3 +1,4 @@
+/// 設定頁：預留頁面，尚未實作主題、匯出、關於等設定項（目前為佔位內容）
 import 'package:flutter/material.dart';
 
 class MySettingPage extends StatefulWidget {

@@ -1,3 +1,4 @@
+/// 新增單筆收入／支出：名稱、金額、標籤，以 BottomSheet 呈現，送出後寫入 DB 並關閉
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 
 class MyAddItemPage extends StatefulWidget {
+  /// true=收入，false=支出（影響標籤選項與 type 欄位）
   final bool isIncome;
   const MyAddItemPage({super.key, required this.isIncome});
 
@@ -21,6 +23,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
   final List<String> expenseTags = ['娛樂', '交通', '伙食', '點心'];
   late String tags;
 
+  /// 標籤下拉選單（依 isIncome 顯示收入或支出標籤）
   Widget selectMenu(var my_color) {
     return PopupMenuButton(
       itemBuilder: (context) {
@@ -61,6 +64,13 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
   }
 
   @override
+  void dispose() {
+    name_controller.dispose();
+    amount_controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
     var expense_data = Provider.of<ExpenseProvider>(context);
@@ -91,7 +101,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
               Text("新增${type}",style: TextStyle(fontSize: 16)),
 
               GestureDetector(
-                onTap: () {
+                onTap: () async {
                   if(name_controller.text.isNotEmpty && amount_controller.text.isNotEmpty) {
                     final testItem = TransactionItem(
                       name: name_controller.text,
@@ -101,10 +111,9 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
                       date: DateTime.now(),
                     );
 
-                    context.read<ExpenseProvider>().add(testItem);
+                    await context.read<ExpenseProvider>().add(testItem);
                   }
-
-                  Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context);
                 },
                 child: Container(
                   width: 35,
@@ -121,7 +130,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
 
           SizedBox(height: 16,),
 
-          // 輸入名稱和價格
+          // 名稱與金額輸入區
           Container(
             height: 100,
             width: 370,
@@ -176,6 +185,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
 
           SizedBox(height: 16,),
 
+          // 標籤選擇列
           Container(
             height: 45,
             width: 370,
@@ -204,6 +214,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
 
           SizedBox(height: 16,),
 
+          // 時間顯示列（目前固定為當下時間，不可編輯）
           Container(
             height: 45,
             width: 370,

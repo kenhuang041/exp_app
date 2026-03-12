@@ -1,4 +1,4 @@
-import 'dart:math';
+/// 首頁：當日剩餘金額、新增收入/支出入口、當日明細列表（可切換依分類分組）
 
 import 'package:exp02/components/list/my_list.dart';
 import 'package:exp02/components/list/my_list_group.dart';
@@ -8,7 +8,6 @@ import 'package:exp02/pages/add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../models/transaction.dart';
 
@@ -20,27 +19,26 @@ class MyExpensePage extends StatefulWidget {
 }
 
 class _MyExpensePageState extends State<MyExpensePage> {
+  /// 是否依標籤分組顯示（true=分組，false=單一列表）
   bool isSort = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<ExpenseProvider>().setDayData(DateTime.now())); // 先讀取資料
-    // .microtask ?
-    // .read ??
+    Future.microtask(() => context.read<ExpenseProvider>().setDayData(DateTime.now()));
   }
 
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
-    var expense_data = Provider.of<ExpenseProvider>(context); // 取得資料
+    var expense_data = Provider.of<ExpenseProvider>(context);
 
     return Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20, top: 90),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 自製 appBar 部分
+          // 頂部標題列（左：返回＋「記帳」、右：設定圖示）
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -76,7 +74,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
 
           SizedBox(height: 10,),
 
-          // 顯示剩餘資金部分 （最大塊的）
+          // 當日剩餘金額卡片（收入－支出）
           Container(
             width: 360,
             height: 191,
@@ -106,7 +104,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
 
           SizedBox(height: 14,),
 
-          // 新稱收入及支出部分
+          // 新增收入／支出按鈕區
           Container(
             width: 360,
             height: 87,
@@ -120,7 +118,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 新增收入項目
+                  // 新增收入：開啟 BottomSheet 輸入
                   GestureDetector(
                     onTap: () {
                       showModalBottomSheet(
@@ -154,7 +152,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
 
                   SizedBox(width: 20,),
 
-                  // 新增支出項目
+                  // 新增支出：開啟 BottomSheet 輸入
                   GestureDetector(
                     onTap: () {
                       showModalBottomSheet(
@@ -192,14 +190,13 @@ class _MyExpensePageState extends State<MyExpensePage> {
 
           SizedBox(height: 30,),
 
-          // 詳細資訊 欄位
+          // 「詳細資訊」標題與「分類」切換鈕
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("詳細資訊", style: TextStyle(fontSize: 14),),
               GestureDetector(
-                onTap: () async {
-                  // /Users/ken/Library/Developer/CoreSimulator/Devices/75D22BAB-FA57-4BE5-896B-C52C900A29DD/data/Containers/Data/Application/1FD932C7-2545-48D0-99B6-52FF0EFBCDC5/Documents
+                onTap: () {
                   setState(() {
                     isSort = !isSort;
                   });
@@ -219,7 +216,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
 
           SizedBox(height: 14,),
 
-          // 列表部分
+          // 當日明細列表（依 isSort 顯示單一列表或依 tag 分組）
           Expanded(
             child: MediaQuery.removePadding(
               context: context,
@@ -232,17 +229,18 @@ class _MyExpensePageState extends State<MyExpensePage> {
                       key: ValueKey("list_$isSort"),
                       itemCount: (!isSort) ? (expense_data.nowData?.items.length ?? 0) : expense_data.nowData!.getAllTags.length, // null則資料數為0
                       itemBuilder: (context, index) {
-                        final item = expense_data.nowData!.items[index];
-                        // print("123");
-
+                        final item = (!isSort) ? expense_data.nowData!.items[index] : null;
+                        final tagName = isSort ? expense_data.nowData!.getAllTags[index] : null;
                         return AnimationConfiguration.staggeredList(
                           position: index,
                           duration: const Duration(milliseconds: 400),
                           child: SlideAnimation(
                             verticalOffset: 50.0,
-                            child: FadeInAnimation(
-                              child: (!isSort) ? MyListItemPage(item: item) : MyListGroupPage(tagName: expense_data.nowData!.getAllTags[index], today: expense_data.nowData!)
-                            )
+                          child: FadeInAnimation(
+                            child: (!isSort)
+                                ? MyListItemPage(item: item!)
+                                : MyListGroupPage(tagName: tagName!, today: expense_data.nowData!)
+                          )
                           )
                         );
                       }

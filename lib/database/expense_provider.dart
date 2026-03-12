@@ -1,14 +1,21 @@
+/// 支出／收入狀態管理（Provider）
+///
+/// 負責：當日資料、當月資料、全月份快取、總額計算，以及與 [DatabaseHelper] 的 CRUD 同步。
+
 import 'package:exp02/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'db_helper.dart';
 
 class ExpenseProvider with ChangeNotifier {
-  List<(DateTime, List<Day>)> _monthData = []; // 每個月份的資料
-  // .first => $1
-  // .second => $2
+  /// 每個月份的資料：(該月 DateTime, 該月每日 [Day] 列表)，$1=月份、$2=日列表
+  List<(DateTime, List<Day>)> _monthData = [];
+  /// 目前顯示月份的每日資料（用於日曆頁）
   List<Day> _nowMonthData = [];
+  /// 資料庫中最早一筆交易的日期，用於日曆可選範圍
   DateTime _firstDate = DateTime.now();
-  Day? _nowData; // 當天的資料
+  /// 當前選定日期的當日收支資料（首頁用）
+  Day? _nowData;
+  /// 當日淨額（收入－支出）
   double? _totalCost;
 
   List<(DateTime, List<Day>)> get monthData => _monthData;
@@ -19,6 +26,7 @@ class ExpenseProvider with ChangeNotifier {
 
   final DatabaseHelper _helper = DatabaseHelper();
 
+  /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthData
   Future<void> setAllMonthData() async {
     DateTime nowDate = DateTime.now();
     List<TransactionItem> all = await _helper.getAll();
@@ -51,6 +59,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 將 _nowMonthData 設為當前系統日期所在月份的日列表（從 _monthData 取出）
   Future<void> setNowMonth() async {
     try {
       DateTime nowDate = DateTime.now();
@@ -66,12 +75,13 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 從 DB 取得第一筆交易日期，更新 _firstDate
   Future<void> setFirstDate() async {
     _firstDate = await _helper.getFirstTransactionDate() ?? DateTime.now();
   }
 
-  // 取得當天資料
-  Future<void> setDayData(DateTime now) async { // now 格式: 2026-03-20
+  /// 取得指定日期的當日交易並寫入 _nowData，同時呼叫 countTotalCost 更新 _totalCost
+  Future<void> setDayData(DateTime now) async {
     DateTime dayTime = DateTime(now.year, now.month, now.day);
     List<TransactionItem> item = await _helper.getDay(dayTime);
 
@@ -81,7 +91,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 計算當天總和
+  /// 依 _nowData 計算當日淨額（收入－支出）並寫入 _totalCost
   Future<void> countTotalCost() async {
     if(_nowData == null) {
       _totalCost = 0;
@@ -91,16 +101,19 @@ class ExpenseProvider with ChangeNotifier {
     _totalCost = total;
   }
 
+  /// 新增一筆交易並刷新當日資料
   Future<void> add(TransactionItem item) async {
     await _helper.insert(item);
-    await setDayData(item.date); // 可調整
+    await setDayData(item.date);
   }
 
+  /// 刪除一筆交易並刷新當日資料
   Future<void> remove(TransactionItem item) async {
     await _helper.delete(item);
-    await setDayData(item.date); // 可調整
+    await setDayData(item.date);
   }
 
+  /// 清空資料庫所有交易並通知監聽者
   Future<void> clearAll() async {
     await _helper.clear();
     notifyListeners();

@@ -1,3 +1,7 @@
+/// 記帳 App 主程式入口與主框架
+///
+/// 負責：Flutter 綁定、Provider 注入、MaterialApp 與底部導航主頁。
+
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:exp02/pages/analysis_page.dart';
@@ -7,32 +11,16 @@ import 'package:exp02/pages/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// 應用程式進入點：初始化 Flutter 綁定後啟動 [MyApp]。
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
+/// 根 Widget：註冊全域狀態（主題色、支出資料）並建立 [MaterialApp]。
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  // 尺寸適配套件
 
-  // 寫 sqfile
-  // sql: 擷取當前月份 新增一個有 31 項的 Item (每天)
-  // Item (每天): 收入List, 支出List, 日期
-  // List 項目 class: 項目名稱, 金額, 資金類別(收入 or 支出), 類別(tags), DateTime,
-
-  // 寫 list 和 統計用 func()
-  // 資料連結 UI
-
-  // UI 完善
-  // 可以統計總金額
-  // List 新增滑動刪除供功能
-  // 提供新增資料頁面
-
-  // 修正統計方式
-  // 將資料分為收入和輸出
-
-  // /Users/ken/Library/Developer/CoreSimulator/Devices/75D22BAB-FA57-4BE5-896B-C52C900A29DD/data/Containers/Data/Application/1FD932C7-2545-48D0-99B6-52FF0EFBCDC5/Documents
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -48,6 +36,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// 主頁：包含四個子頁面（首頁／日曆／統計／設定）與自訂底部導航列。
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -56,7 +45,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  /// 四個分頁：首頁記帳、日曆、統計、設定
   final List _pages = [MyExpensePage(), MyCalendarPage(), MyAnalysisPage(), MySettingPage()];
+  /// 目前選中的 Tab 索引（0=首頁, 1=日曆, 2=統計, 3=設定）
   int now = 0;
 
   @override
@@ -69,10 +60,9 @@ class _MyHomePageState extends State<MyHomePage> {
       body: _pages[now],
 
       bottomNavigationBar: Container(
-        // 這裡放入你自定義的底部導航欄
         height: 100,
         decoration: BoxDecoration(
-          color: my_color.item,  /*.withOpacity(0.9), // 建議用一點透明度，效果更自然*/
+          color: my_color.item,
           borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
         ),
         child: Padding(
@@ -82,6 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // 首頁 Tab
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -97,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 SizedBox(width: 25,),
-
+                // 日曆 Tab
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -113,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 SizedBox(width: 25,),
-
+                // 統計 Tab
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -129,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 SizedBox(width: 25,),
-
+                // 設定 Tab
                 GestureDetector(
                   onTap: () {
                     setState(() {

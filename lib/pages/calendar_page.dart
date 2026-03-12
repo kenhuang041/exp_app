@@ -1,3 +1,5 @@
+/// 日曆頁：月曆格顯示每日淨額色塊、切換月份、當月收入／支出總計
+
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:flutter/material.dart';
@@ -15,13 +17,16 @@ class MyCalendarPage extends StatefulWidget {
 class _MyCalendarPageState extends State<MyCalendarPage> {
   List<String> weekName = ["M", "T", "W", "T", "F", "S", "S"];
   List<String> monthName = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月", ];
+  /// 目前顯示的月份（使用者可切換）
   DateTime now = DateTime.now();
-  DateTime? first_day;
 
+  /// 當月 1 號是星期幾（0=周一 … 6=周日），用於月曆前導空格
   late int month_day1;
+  /// 上個月天數，用於月曆前導格顯示上月日期
   late int last_month_day;
+  /// 系統當前日期，用於「今天」與月份切換上限
   final DateTime now_standard = DateTime.now();
-  bool isEnd = false, isStart = false;
+  /// 日曆格色階門檻： [0]=支出色階, [1]=收入色階，每格四個門檻
   final List<List<double>> standard = [
     [50.0, 100.0, 150.0, 200.0],
     [100.0, 200.0, 300.0, 400.0]
@@ -30,23 +35,24 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
   @override
   void initState() {
     super.initState();
-    // Future.microtask(() => context.read<ExpenseProvider>().clearAll());
     updateDate();
     getData();
   }
 
+  /// 依當前 [now] 更新 month_day1、last_month_day
   void updateDate() {
     month_day1 = DateTime(now.year, now.month, 1).weekday - 1;
     last_month_day = DateTime(now.year, now.month, 0).day;
   }
 
+  /// 載入最早日期、全月份資料、並設定當前月份資料
   void getData() async {
-    // if (!mounted) return;
     await Future.microtask(() => context.read<ExpenseProvider>().setFirstDate());
     await Future.microtask(() => context.read<ExpenseProvider>().setAllMonthData());
     await Future.microtask(() => context.read<ExpenseProvider>().setNowMonth());
   }
 
+  /// 目前顯示月份的收入總和
   double getMonthTotalIncome(expenseData) {
     if(expenseData.monthData.isEmpty) return 0.0;
     var items = expenseData.monthData.firstWhere((x) => (x.$1.year == now.year && x.$1.month == now.month));
@@ -58,6 +64,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
     return ret;
   }
 
+  /// 目前顯示月份的支出總和
   double getMonthTotalExpense(expenseData) {
     if(expenseData.monthData.isEmpty) return 0.0;
     var items = expenseData.monthData.firstWhere((x) => (x.$1.year == now.year && x.$1.month == now.month));
@@ -70,6 +77,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
     return ret;
   }
 
+  /// 依金額區間回傳日曆格背景色與文字色（type: 0=支出, 1=收入）
   (Color, Color) setItemColor(type, count, myColor) {
     Color back = myColor.item;
     Color number = Colors.black87;
@@ -228,7 +236,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                         height: 30,
                         alignment: Alignment.center,
                         child: Text(
-                          weekName[index],
+                          weekName[index], // 星期標題列
                           style: const TextStyle(color: Colors.black54, fontSize: 14),
                         ),
                       );
@@ -326,7 +334,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
 
           SizedBox(height: 12,),
 
-          // 列表部分
+          // 當月收入／支出總計兩列
           Expanded(
             child: MediaQuery.removePadding(
               context: context,

@@ -1,8 +1,8 @@
+/// 依標籤分組的區塊：顯示標籤名稱與該標籤下的多筆 [MyListItemPage]
 import 'package:exp02/components/list/my_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../database/expense_provider.dart';
 import '../../models/color.dart';
 import '../../models/transaction.dart';
 
@@ -19,8 +19,7 @@ class _MyListGroupPageState extends State<MyListGroupPage> {
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
-    var expense_data = Provider.of<ExpenseProvider>(context); // 取得資料
-    List<TransactionItem> groupItem = widget.today.tagsOfItems(widget.tagName ?? "errorTag") ?? [];
+    List<TransactionItem> groupItem = widget.today.tagsOfItems(widget.tagName);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),

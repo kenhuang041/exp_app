@@ -1,3 +1,4 @@
+/// 單筆收支列表項：顯示名稱、金額、收入/支出圖示，左滑可刪除（Dismissible）
 import 'package:exp02/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,14 +18,14 @@ class _MyListItemPageState extends State<MyListItemPage> {
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
-    var expense_data = Provider.of<ExpenseProvider>(context); // 取得資料
+    var expense_data = Provider.of<ExpenseProvider>(context);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Dismissible(
-        key: Key(widget.item.id.toString()),
+        key: Key(widget.item.id?.toString() ?? '${widget.item.name}_${widget.item.date.millisecondsSinceEpoch}'),
         direction: DismissDirection.endToStart,
-        onDismissed: (d) {
+        onDismissed: (_) {
           expense_data.remove(widget.item);
         },
         child: Container(

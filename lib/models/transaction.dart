@@ -1,11 +1,13 @@
-// 1. 單筆交易項目 (收入或支出)
+/// 單筆交易項目（收入或支出），對應 DB 一筆紀錄
 class TransactionItem {
   final int? id;
-  final String name;          // 項目名稱
-  final double amount;        // 金額
-  final String type;          // 資金類別: 收入或支出
-  final String tags;    // 類別 (Tags)
-  final DateTime date;    // 確切時間
+  final String name;
+  final double amount;
+  /// 資金類別：'income' 或 'expense'
+  final String type;
+  /// 分類標籤（目前為單一字串，如「薪水」「交通」）
+  final String tags;
+  final DateTime date;
 
   TransactionItem({
     this.id,
@@ -16,7 +18,7 @@ class TransactionItem {
     required this.date,
   });
 
-  // class 轉 Map<String, dynamic>
+  /// 轉成 sqflite insert/update 用的 Map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -24,47 +26,49 @@ class TransactionItem {
       'amount': amount,
       'type': type,
       'tags': tags, // 轉成SQL能識別的 String
-      'date': date.toIso8601String(), // 和上述同理
+      'date': date.toIso8601String(),
     };
   }
 
-  // Map<String, dynamic> 轉 class
+  /// 從 DB 查詢結果的 Map 建立實例
   factory TransactionItem.fromMap(Map<String, dynamic> mp) {
     return TransactionItem(
       id: mp['id'],
       name: mp['name'],
       amount: mp['amount'],
       type: mp['type'],
-      tags: mp['tags'], // String to List
-      date: DateTime.parse(mp['date']), // to DateTime
+      tags: mp['tags'],
+      date: DateTime.parse(mp['date']),
     );
   }
 }
 
+/// 單日彙總：該日期的所有交易列表，以及收入／支出合計的 getter
 class Day {
   final DateTime date;
-  List<TransactionItem> items;  // List
+  List<TransactionItem> items;
 
   Day({
     required this.date,
     required this.items,
   });
 
-  // 統計收入總和
+  /// 當日所有 type == 'income' 的金額總和
   double get totalIncome => items
       .where((x) => x.type == "income")
       .fold(0, (sum, item) => sum + item.amount);
 
-  // 統計支出總和
+  /// 當日所有 type == 'expense' 的金額總和
   double get totalExpense => items
       .where((x) => x.type == "expense")
       .fold(0, (sum, item) => sum + item.amount);
 
-  // 取得特定 tag 的所有 item
+  /// 篩選出 tags 等於 [tag] 的交易列表
   List<TransactionItem> tagsOfItems(String tag) => items
       .where((x) => x.tags == tag)
       .toList();
-  
+
+  /// 當日所有不重複的 tags（收入類先、支出類後）
   List<String> get getAllTags {
     final sortedItems = List<TransactionItem>.from(items);
     sortedItems.sort((a,b) {

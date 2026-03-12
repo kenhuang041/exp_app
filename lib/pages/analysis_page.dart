@@ -1,3 +1,4 @@
+/// 統計頁：預留頁面，尚未實作圖表或統計摘要（目前為佔位內容）
 import 'package:flutter/material.dart';
 
 class MyAnalysisPage extends StatefulWidget {
