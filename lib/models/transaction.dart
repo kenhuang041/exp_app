@@ -18,6 +18,26 @@ class TransactionItem {
     required this.date,
   });
 
+  /// 產生一份帶部分修改的新物件（常用於：insert 後回填 id）
+  /// [!AI] 新增 copyWith：讓 insert 回傳的 id 能寫回 model，後續刪除可穩定依 id 處理。
+  TransactionItem copyWith({
+    int? id,
+    String? name,
+    double? amount,
+    String? type,
+    String? tags,
+    DateTime? date,
+  }) {
+    return TransactionItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      tags: tags ?? this.tags,
+      date: date ?? this.date,
+    );
+  }
+
   /// 轉成 sqflite insert/update 用的 Map
   Map<String, dynamic> toMap() {
     return {

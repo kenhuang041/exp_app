@@ -48,9 +48,20 @@ class DatabaseHelper {
     return await db.insert('transactions', item.toMap());
   }
 
-  /// 依 name、amount、date、type 刪除一筆紀錄（建議改為依 id 刪除以避免重複刪錯）
+  /// 刪除一筆紀錄
+  ///
+  /// - 若 [item.id] 存在，優先依 id 刪除（最安全）
+  /// - 否則退回使用 name+amount+date+type（可能會刪到重複資料）
+  /// [!AI] 修正刪除邏輯：避免同名同金額同時間造成「刪錯筆/刪多筆」。
   Future<int> delete(TransactionItem item) async {
     var db = await database;
+    if (item.id != null) {
+      return await db.delete(
+        'transactions',
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+    }
     return await db.delete(
         'transactions',
         where: 'name = ? AND amount = ? AND date = ? AND type = ?',

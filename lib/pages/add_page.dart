@@ -73,7 +73,7 @@ class _MyAddItemPageState extends State<MyAddItemPage> {
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
-    var expense_data = Provider.of<ExpenseProvider>(context);
+    // var expense_data = Provider.of<ExpenseProvider>(context);
     String type = (widget.isIncome) ? "收入" : "支出";
 
     return Padding(

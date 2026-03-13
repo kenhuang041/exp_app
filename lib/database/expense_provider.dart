@@ -8,7 +8,7 @@ import 'db_helper.dart';
 
 class ExpenseProvider with ChangeNotifier {
   /// 每個月份的資料：(該月 DateTime, 該月每日 [Day] 列表)，$1=月份、$2=日列表
-  List<(DateTime, List<Day>)> _monthData = [];
+  Map<DateTime, List<Day>> _monthData = {};
   /// 目前顯示月份的每日資料（用於日曆頁）
   List<Day> _nowMonthData = [];
   /// 資料庫中最早一筆交易的日期，用於日曆可選範圍
@@ -18,7 +18,7 @@ class ExpenseProvider with ChangeNotifier {
   /// 當日淨額（收入－支出）
   double? _totalCost;
 
-  List<(DateTime, List<Day>)> get monthData => _monthData;
+  Map<DateTime, List<Day>> get monthData => _monthData;
   List<Day> get nowMonthData => _nowMonthData;
   Day? get nowData => _nowData;
   double? get totalCost => _totalCost;
@@ -29,14 +29,14 @@ class ExpenseProvider with ChangeNotifier {
   /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthData
   Future<void> setAllMonthData() async {
     DateTime nowDate = DateTime.now();
-    List<TransactionItem> all = await _helper.getAll();
+    // [!AI] 移除多餘的 getAll()：原本先全表讀取，但實際上未使用，且會造成重複 IO。
 
     _monthData.clear();
 
     int total = (nowDate.year - _firstDate.year) * 12 + (nowDate.month - _firstDate.month);
 
     for(int i=0; i<=total; i++) {
-      DateTime nowMonth = DateTime(_firstDate.year, _firstDate.month + i);
+      DateTime nowMonth = DateTime(_firstDate.year, _firstDate.month + i, 1);
       List<TransactionItem> monthData = await _helper.getMonth(nowMonth);
 
       int daysInMonth = DateTime(nowMonth.year, nowMonth.month + 1, 0).day;
@@ -49,10 +49,7 @@ class ExpenseProvider with ChangeNotifier {
         }
       }
 
-      if (tmp.isNotEmpty) {
-        var pair = (nowMonth, tmp);
-        _monthData.add(pair);
-      }
+      if (tmp.isNotEmpty) _monthData[nowMonth] = tmp;
       else print('error of tmp2');
     }
 
@@ -63,10 +60,8 @@ class ExpenseProvider with ChangeNotifier {
   Future<void> setNowMonth() async {
     try {
       DateTime nowDate = DateTime.now();
-      var tmp = _monthData.firstWhere(
-        (x) => (x.$1.year == nowDate.year  && x.$1.month == nowDate.month)
-      );
-      _nowMonthData = tmp.$2;
+      var tmp = _monthData[DateTime(nowDate.year, nowDate.month)];
+      _nowMonthData = tmp ?? [];
     } catch (e) {
       print("error of getNowMonth");
       _nowMonthData = [];
@@ -78,7 +73,9 @@ class ExpenseProvider with ChangeNotifier {
   /// 從 DB 取得第一筆交易日期，更新 _firstDate
   Future<void> setFirstDate() async {
     _firstDate = await _helper.getFirstTransactionDate() ?? DateTime.now();
+    notifyListeners(); // [!AI] 修正：firstDate 改變時通知 UI（例如日曆可切換月份範圍）
   }
+
 
   /// 取得指定日期的當日交易並寫入 _nowData，同時呼叫 countTotalCost 更新 _totalCost
   Future<void> setDayData(DateTime now) async {
@@ -86,13 +83,17 @@ class ExpenseProvider with ChangeNotifier {
     List<TransactionItem> item = await _helper.getDay(dayTime);
 
     _nowData = Day(date: now, items: item);
-    countTotalCost();
+    DateTime monthKey = DateTime(now.year, now.month, 1);
+    if (_monthData.containsKey(monthKey) && _nowData != null) {
+      _monthData[monthKey]![now.day - 1] = _nowData!;
+    }
 
+    countTotalCost();
     notifyListeners();
   }
 
   /// 依 _nowData 計算當日淨額（收入－支出）並寫入 _totalCost
-  Future<void> countTotalCost() async {
+  void countTotalCost() {
     if(_nowData == null) {
       _totalCost = 0;
       return;
@@ -103,8 +104,11 @@ class ExpenseProvider with ChangeNotifier {
 
   /// 新增一筆交易並刷新當日資料
   Future<void> add(TransactionItem item) async {
-    await _helper.insert(item);
-    await setDayData(item.date);
+    final newId = await _helper.insert(item);
+    // [!AI] insert 後回填 id：後續 Dismissible 刪除可穩定用 id，不會刪到同名同金額的其它筆。
+    final inserted = item.copyWith(id: newId);
+
+    await setDayData(inserted.date);
   }
 
   /// 刪除一筆交易並刷新當日資料

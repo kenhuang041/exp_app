@@ -48,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
   /// 四個分頁：首頁記帳、日曆、統計、設定
   final List _pages = [MyExpensePage(), MyCalendarPage(), MyAnalysisPage(), MySettingPage()];
   /// 目前選中的 Tab 索引（0=首頁, 1=日曆, 2=統計, 3=設定）
-  int now = 0;
+  int now = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: my_color.grey,
       extendBody: true,
+      // [!AI] 改用 IndexedStack：切換 Tab 時保留各頁 State，避免日曆/首頁每次切換都重跑 initState 造成重載與卡頓
       body: _pages[now],
 
       bottomNavigationBar: Container(

@@ -8,6 +8,7 @@ import 'package:exp02/pages/add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../models/transaction.dart';
 
@@ -32,6 +33,9 @@ class _MyExpensePageState extends State<MyExpensePage> {
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
     var expense_data = Provider.of<ExpenseProvider>(context);
+    // [!AI] 防呆：nowData 尚未載入時不要強制解參考，避免 build 階段直接閃退。
+    final tags = expense_data.nowData?.getAllTags ?? const <String>[];
+
 
     return Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20, top: 90),
@@ -45,14 +49,19 @@ class _MyExpensePageState extends State<MyExpensePage> {
               Row(
                 children: [
                   Center(
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: my_color.item,
-                        borderRadius: BorderRadius.circular(1000),
+                    child: GestureDetector(
+                      onTap: () async {
+                        print(await getDatabasesPath());
+                      },
+                      child: Container(
+                        width: 35,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: my_color.item,
+                          borderRadius: BorderRadius.circular(1000),
+                        ),
+                        child: Icon(Icons.arrow_back_ios_rounded, color: Colors.black, size: 16,),
                       ),
-                      child: Icon(Icons.arrow_back_ios_rounded, color: Colors.black, size: 16,),
                     ),
                   ),
                   SizedBox(width: 12,),
@@ -227,10 +236,11 @@ class _MyExpensePageState extends State<MyExpensePage> {
                     key: ValueKey(isSort),
                     child: ListView.builder(
                       key: ValueKey("list_$isSort"),
-                      itemCount: (!isSort) ? (expense_data.nowData?.items.length ?? 0) : expense_data.nowData!.getAllTags.length, // null則資料數為0
+                      itemCount: (!isSort) ? (expense_data.nowData?.items.length ?? 0) : tags.length, // null則資料數為0
+
                       itemBuilder: (context, index) {
                         final item = (!isSort) ? expense_data.nowData!.items[index] : null;
-                        final tagName = isSort ? expense_data.nowData!.getAllTags[index] : null;
+                        final tagName = isSort ? tags[index] : null;
                         return AnimationConfiguration.staggeredList(
                           position: index,
                           duration: const Duration(milliseconds: 400),

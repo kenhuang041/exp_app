@@ -3,8 +3,10 @@
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 
+import '../components/list/my_list_group.dart';
 import '../models/transaction.dart';
 
 class MyCalendarPage extends StatefulWidget {
@@ -19,6 +21,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
   List<String> monthName = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月", ];
   /// 目前顯示的月份（使用者可切換）
   DateTime now = DateTime.now();
+  // DateTime nowIndex = DateTime.now();
 
   /// 當月 1 號是星期幾（0=周一 … 6=周日），用於月曆前導空格
   late int month_day1;
@@ -47,18 +50,22 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
 
   /// 載入最早日期、全月份資料、並設定當前月份資料
   void getData() async {
-    await Future.microtask(() => context.read<ExpenseProvider>().setFirstDate());
-    await Future.microtask(() => context.read<ExpenseProvider>().setAllMonthData());
-    await Future.microtask(() => context.read<ExpenseProvider>().setNowMonth());
+    // [!AI] 避免重複重載：若已有 monthData 快取，就不再整批重建（搭配 IndexedStack 效果更好）
+    final provider = context.read<ExpenseProvider>();
+    await Future.microtask(() => provider.setFirstDate());
+    if (provider.monthData.isEmpty) {
+      await Future.microtask(() => provider.setAllMonthData());
+    }
+    await Future.microtask(() => provider.setNowMonth());
   }
 
   /// 目前顯示月份的收入總和
   double getMonthTotalIncome(expenseData) {
     if(expenseData.monthData.isEmpty) return 0.0;
-    var items = expenseData.monthData.firstWhere((x) => (x.$1.year == now.year && x.$1.month == now.month));
+    final items = expenseData.monthData[DateTime(now.year, now.month)] ?? [];
     double ret = 0.0;
 
-    for(Day day in items.$2) {
+    for(Day day in items) {
       ret += day.totalIncome;
     }
     return ret;
@@ -67,10 +74,11 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
   /// 目前顯示月份的支出總和
   double getMonthTotalExpense(expenseData) {
     if(expenseData.monthData.isEmpty) return 0.0;
-    var items = expenseData.monthData.firstWhere((x) => (x.$1.year == now.year && x.$1.month == now.month));
+
+    final items = expenseData.monthData[DateTime(now.year, now.month)] ?? [];
     double ret = 0.0;
 
-    for(Day day in items.$2) {
+    for(Day day in items) {
       ret += day.totalExpense;
     }
 
@@ -98,6 +106,12 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
   Widget build(BuildContext context) {
     var myColor = Provider.of<MyColor>(context);
     var expenseData = Provider.of<ExpenseProvider>(context);
+    final tags = expenseData.monthData[DateTime(now.year, now.month)]?[now.day-1].getAllTags;
+
+    // [!AI] 預先取出當月 day 列表，避免在 Grid itemBuilder 內重複 firstWhere 搜尋
+    final currentMonthDays = expenseData.monthData.isEmpty
+        ? const <Day>[]
+        : expenseData.monthData[DateTime(now.year, now.month)] ?? [];
 
     return Padding(
       padding: const EdgeInsets.only(left: 40, right: 40, bottom: 20, top: 120),
@@ -123,9 +137,13 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                       children: [
                         GestureDetector(
                           onTap: () async {
-                            if(now.month-1 >= expenseData.firstDate.month) {
+                            // [!AI] 修正月份邊界判斷：原本只比 month，跨年份時會錯
+                            final canGoPrev = (now.year > expenseData.firstDate.year) ||
+                                (now.year == expenseData.firstDate.year && now.month > expenseData.firstDate.month);
+                            if (canGoPrev) {
                               setState(() {
                                 now = DateTime(now.year, now.month-1);
+                                if(now.month == DateTime.now().month) now = DateTime(now.year, now.month, DateTime.now().day);
                                 updateDate();
                               });
                             }
@@ -149,9 +167,13 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
 
                         GestureDetector(
                           onTap: () {
-                            if(now.month+1 <= now_standard.month) {
+                            // [!AI] 修正月份上限判斷：需同時考慮 year/month
+                            final canGoNext = (now.year < now_standard.year) ||
+                                (now.year == now_standard.year && now.month < now_standard.month);
+                            if (canGoNext) {
                               setState(() {
                                 now = DateTime(now.year, now.month+1);
+                                if(now.month == DateTime.now().month) now = DateTime(now.year, now.month, DateTime.now().day);
                                 updateDate();
                               });
                             }
@@ -259,15 +281,20 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                     double count = 0.0;
                     (Color, Color) tmp = (myColor.item, Colors.black87);
 
-                    if(expenseData.monthData.isNotEmpty && index >= month_day1) {
+                    if(currentMonthDays.isNotEmpty && index >= month_day1) {
                       DateTime time = DateTime(now.year, now.month, index+1-month_day1);
-                      var month = expenseData.monthData.firstWhere((x) => (x.$1.year == time.year && x.$1.month == time.month));
-                      var day = month.$2.firstWhere((x) => (x.date.year == time.year && x.date.month == time.month && x.date.day == time.day));
+                      // [!AI] 防止找不到日期時 firstWhere 拋錯：改用索引直接取當月 days
+                      final dayIndex = time.day - 1;
+                      final day = (dayIndex >= 0 && dayIndex < currentMonthDays.length)
+                          ? currentMonthDays[dayIndex]
+                          : null;
 
-                      double a = day.totalIncome;
-                      double b = day.totalExpense;
-                      count = a-b;
-                      tmp = setItemColor(((count>0) ? 1 : 0), count, myColor);
+                      if (day != null) {
+                        final a = day.totalIncome;
+                        final b = day.totalExpense;
+                        count = a - b;
+                        tmp = setItemColor(((count > 0) ? 1 : 0), count, myColor);
+                      }
                     }
 
                     return (index < month_day1) ?
@@ -286,18 +313,30 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                           ),
                         ),
                       ) :
-                      Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: tmp.$1,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          (index+1-month_day1).toString(),
-                          style: TextStyle(
-                            color: tmp.$2,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            now = DateTime(now.year, now.month, (index+1-month_day1));
+                          });
+
+
+                          var tmp = expenseData.monthData[DateTime(now.year, 3)]![12];
+                          print("${tmp.date} ${tmp.items}");
+
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: tmp.$1,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            (index+1-month_day1).toString(),
+                            style: TextStyle(
+                              color: tmp.$2,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold
+                            ),
                           ),
                         ),
                       );
@@ -335,12 +374,15 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
           SizedBox(height: 12,),
 
           // 當月收入／支出總計兩列
+          /*
           Expanded(
             child: MediaQuery.removePadding(
               context: context,
               removeTop: true,
               child: ListView(
                 physics: NeverScrollableScrollPhysics(),
+
+
                 children: [
                   Container(
                     height: 50,
@@ -386,6 +428,44 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                 ],
               )
             )
+          ) */
+
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: (expenseData.monthData[DateTime(now.year, now.month)]?[now.day-1] == null)
+                ? Container()
+                : AnimationLimiter(
+                    // key: ValueKey(isSort),
+                    child: (expenseData.monthData[DateTime(now.year, now.month)]?[now.day-1].items.length == 0)
+                      ? Container(
+                          alignment: Alignment.topCenter,
+                          padding: const EdgeInsets.only(top: 60),
+                          child: Text("暫無資料", style: TextStyle(color: Colors.grey, fontSize: 12,)),
+                      )
+                      : ListView.builder(
+                          // key: ValueKey("list_$isSort"),
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: tags!.length ?? 0, // null則資料數為0
+                          itemBuilder: (context, index) {
+                            final nowDay = expenseData.monthData[DateTime(now.year, now.month)]?[now.day-1];
+                            final tagName = tags[index];
+
+                            return AnimationConfiguration.staggeredList(
+                              position: index,
+                              duration: const Duration(milliseconds: 400),
+                              child: SlideAnimation(
+                                verticalOffset: 50.0,
+                                child: FadeInAnimation(
+                                  child: MyListGroupPage(tagName: tagName, today: nowDay!)
+                                )
+                              )
+                            );
+                        }
+                    ),
+                  )
+              )
           )
         ],
       )
