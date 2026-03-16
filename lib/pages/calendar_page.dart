@@ -319,10 +319,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                             now = DateTime(now.year, now.month, (index+1-month_day1));
                           });
 
-
                           var tmp = expenseData.monthData[DateTime(now.year, 3)]![12];
-                          print("${tmp.date} ${tmp.items}");
-
                         },
                         child: Container(
                           alignment: Alignment.center,
