@@ -4,6 +4,7 @@
 
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
+import 'package:exp02/models/page.dart';
 import 'package:exp02/pages/analysis_page.dart';
 import 'package:exp02/pages/calendar_page.dart';
 import 'package:exp02/pages/home_page.dart';
@@ -26,9 +27,10 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MyColor()),
+        ChangeNotifierProvider(create: (_) => PageIndex()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
       ],
-      child: MaterialApp(
+      child: const MaterialApp( //1212
         debugShowCheckedModeBanner: false,
         home: MyHomePage(),
       ),
@@ -48,11 +50,12 @@ class _MyHomePageState extends State<MyHomePage> {
   /// 四個分頁：首頁記帳、日曆、統計、設定
   final List _pages = [MyExpensePage(), MyCalendarPage(), MyAnalysisPage(), MySettingPage()];
   /// 目前選中的 Tab 索引（0=首頁, 1=日曆, 2=統計, 3=設定）
-  int now = 2;
 
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
+    var provider = Provider.of<PageIndex>(context);
+    var now = provider.currentPageIndex;
 
     return Scaffold(
       backgroundColor: my_color.grey,
@@ -77,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      now = 0;
+                      provider.setIndex(0);
                     });
                   },
                   child: Column(
@@ -93,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      now = 1;
+                      provider.setIndex(1);
                     });
                   },
                   child: Column(
@@ -109,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      now = 2;
+                      provider.setIndex(2);
                     });
                   },
                   child: Column(
@@ -125,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      now = 3;
+                      provider.setIndex(3);
                     });
                   },
                   child: Column(

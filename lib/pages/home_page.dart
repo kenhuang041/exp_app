@@ -1,15 +1,20 @@
 /// 首頁：當日剩餘金額、新增收入/支出入口、當日明細列表（可切換依分類分組）
 
+import 'dart:io';
+
 import 'package:exp02/components/list/my_list.dart';
 import 'package:exp02/components/list/my_list_group.dart';
 import 'package:exp02/database/expense_provider.dart';
 import 'package:exp02/models/color.dart';
 import 'package:exp02/pages/add_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/page.dart';
 import '../models/transaction.dart';
 
 class MyExpensePage extends StatefulWidget {
@@ -51,7 +56,8 @@ class _MyExpensePageState extends State<MyExpensePage> {
                   Center(
                     child: GestureDetector(
                       onTap: () async {
-                        print(await getDatabasesPath());
+                        // print(await getDatabasesPath());
+                        await FlutterExitApp.exitApp();
                       },
                       child: Container(
                         width: 35,
@@ -69,15 +75,24 @@ class _MyExpensePageState extends State<MyExpensePage> {
                 ],
               ),
 
-              Container(
-                width: 35,
-                height: 35,
-                decoration: BoxDecoration(
-                  color: my_color.item,
-                  borderRadius: BorderRadius.circular(1000),
+              /*
+              GestureDetector(
+                onTap: () {
+                  var provider = Provider.of<PageIndex>(context, listen: false);
+                  setState(() {
+                    provider.setIndex(3);
+                  });
+                },
+                child: Container(
+                  width: 35,
+                  height: 35,
+                  decoration: BoxDecoration(
+                    color: my_color.item,
+                    borderRadius: BorderRadius.circular(1000),
+                  ),
+                  child: Icon(Icons.settings, color: Colors.black, size: 20,),
                 ),
-                child: Icon(Icons.settings, color: Colors.black, size: 20,),
-              ),
+              ), */
             ],
           ),
 
@@ -114,87 +129,101 @@ class _MyExpensePageState extends State<MyExpensePage> {
           SizedBox(height: 14,),
 
           // 新增收入／支出按鈕區
-          Container(
-            width: 360,
-            height: 87,
-            decoration: BoxDecoration(
-              color: my_color.item,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 14, bottom: 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 新增收入：開啟 BottomSheet 輸入
-                  GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(40)
-                        ),
-                        backgroundColor: my_color.grey,
-                        scrollControlDisabledMaxHeightRatio: 0.88,
-                        builder: (context) {
-                          return MyAddItemPage(isIncome: true,);
-                        }
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: my_color.item_grey,
-                            borderRadius: BorderRadius.circular(1000),
-                          ),
-                          child: Icon(Icons.arrow_upward, color: Colors.black, size: 20,),
-                        ),
-                        SizedBox(height: 2,),
-                        Text("收入", style: TextStyle(fontSize: 12, color: my_color.text,)),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(width: 20,),
-
-                  // 新增支出：開啟 BottomSheet 輸入
-                  GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40)
-                        ),
-                        backgroundColor: my_color.grey,
-                        scrollControlDisabledMaxHeightRatio: 0.88,
-                        builder: (context) {
-                          return MyAddItemPage(isIncome: false,);
-                        }
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: my_color.item_grey,
-                            borderRadius: BorderRadius.circular(1000),
-                          ),
-                          child: Icon(Icons.arrow_downward, color: Colors.black, size: 20,),
-                        ),
-                        SizedBox(height: 2,),
-                        Text("支出", style: TextStyle(fontSize: 12, color: my_color.text,)),
-                      ],
-                    ),
-                  ),
-                ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 178,
+                height: 87,
+                decoration: BoxDecoration(
+                  color: my_color.item,
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
+
+              Container(
+                width: 150,
+                height: 87,
+                decoration: BoxDecoration(
+                  color: my_color.item,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20, right: 20, top: 14, bottom: 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 新增收入：開啟 BottomSheet 輸入
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                              context: context,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40)
+                              ),
+                              backgroundColor: my_color.grey,
+                              scrollControlDisabledMaxHeightRatio: 0.88,
+                              builder: (context) {
+                                return MyAddItemPage(isIncome: true,);
+                              }
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 45,
+                              height: 45,
+                              decoration: BoxDecoration(
+                                color: my_color.item_grey,
+                                borderRadius: BorderRadius.circular(1000),
+                              ),
+                              child: Icon(Icons.arrow_upward, color: Colors.black, size: 20,),
+                            ),
+                            SizedBox(height: 2,),
+                            Text("收入", style: TextStyle(fontSize: 12, color: my_color.text,)),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(width: 20,),
+
+                      // 新增支出：開啟 BottomSheet 輸入
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                              context: context,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40)
+                              ),
+                              backgroundColor: my_color.grey,
+                              scrollControlDisabledMaxHeightRatio: 0.88,
+                              builder: (context) {
+                                return MyAddItemPage(isIncome: false,);
+                              }
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 45,
+                              height: 45,
+                              decoration: BoxDecoration(
+                                color: my_color.item_grey,
+                                borderRadius: BorderRadius.circular(1000),
+                              ),
+                              child: Icon(Icons.arrow_downward, color: Colors.black, size: 20,),
+                            ),
+                            SizedBox(height: 2,),
+                            Text("支出", style: TextStyle(fontSize: 12, color: my_color.text,)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
 
           SizedBox(height: 30,),

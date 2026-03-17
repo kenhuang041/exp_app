@@ -213,7 +213,7 @@ class PieChartPainter extends CustomPainter {
 
     paint.color = myColor.barGrey;
     canvas.drawRect(
-      Rect.fromLTRB(center.dx + 46, center.dy + 16, center.dx + 54, center.dy + 8),
+      Rect.fromLTRB(center.dx + 46, center.dy + 11, center.dx + 54, center.dy + 3),
       paint
     );
 
@@ -227,7 +227,7 @@ class PieChartPainter extends CustomPainter {
     _drawIcon(
       canvas,
       Colors.black26.withOpacity(progress.clamp(0.0, 1.0)),
-      Offset(310, 108),
+      Offset(310, 98),
       Icons.wallet,
     );
   }

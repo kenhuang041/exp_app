@@ -4,6 +4,7 @@
 
 import 'package:exp02/models/transaction.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'db_helper.dart';
 
 class ExpenseProvider with ChangeNotifier {
@@ -122,4 +123,11 @@ class ExpenseProvider with ChangeNotifier {
     await _helper.clear();
     notifyListeners();
   }
+
+  /*
+  Future<void> _handleSafeExit() async {
+    await _helper.saveAll();
+    await FlutterExitApp.exitApp();
+  }
+  */
 }

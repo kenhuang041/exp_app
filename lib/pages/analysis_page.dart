@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../database/expense_provider.dart';
+import '../models/page.dart';
 import '../models/transaction.dart';
 import 'package:collection/collection.dart';
 
@@ -168,14 +169,22 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
                   Text("每週結算",style: TextStyle(fontSize: 14, color: Colors.black54)),
                   Align(
                     alignment: AlignmentDirectional.centerEnd,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: myColor.item,
-                        borderRadius: BorderRadius.circular(1000),
+                    child: GestureDetector(
+                      onTap: () {
+                        var provider = Provider.of<PageIndex>(context, listen: false);
+                        setState(() {
+                          provider.setIndex(3);
+                        });
+                      },
+                      child: Container(
+                        width: 35,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: myColor.item,
+                          borderRadius: BorderRadius.circular(1000),
+                        ),
+                        child: Icon(Icons.edit, color: Colors.black, size: 16,),
                       ),
-                      child: Icon(Icons.refresh, color: Colors.black, size: 20,),
                     ),
                   ),
                 ],
@@ -339,7 +348,7 @@ class ChartPainter extends CustomPainter {
     double sweep = pi * (value * progress);
 
     canvas.drawArc(Rect.fromCircle(center: center, radius: r), start, pi, false, paint);
-    paint.color = Colors.blueAccent;
+    paint.color = myColor.blue;
     canvas.drawArc(Rect.fromCircle(center: center, radius: r), start, sweep, false, paint);
 
     _drawText(
