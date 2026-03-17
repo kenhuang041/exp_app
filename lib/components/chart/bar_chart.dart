@@ -22,7 +22,7 @@ class _MyBarChartState extends State<MyBarChart> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 50), () { // 延遲觸發
+    Future.delayed(const Duration(milliseconds: 140), () { //
       if (mounted) setState(() => _startAnimation = true);
     });
   }
@@ -31,12 +31,14 @@ class _MyBarChartState extends State<MyBarChart> {
   Widget build(BuildContext context) {
     var myColor = Provider.of<MyColor>(context);
     double average = widget.items.fold(0.0, (sum, item) => sum + (item?.totalExpense ?? 0.0));
-    double mx = 500.0, spec = 100.0;
+    double mx = 500.0, spec = 100.0, mod=0;
     for(var day in widget.items) {
       mx = max(mx, (day == null) ? 0.0 : day.totalExpense);
+      if(day!.items.isNotEmpty) mod = max(1, mod+1);
     }
     mx = (mx>500 ? (mx>1000 ? 2000 : 1000) : 500);
     spec = (mx>500 ? (mx>1000 ? 400 : 200) : 100);
+    // debugPrint('Build triggered by: ${context.widget.runtimeType}');
 
     return BarChart(
       key: ValueKey(widget.items.length),
@@ -53,7 +55,7 @@ class _MyBarChartState extends State<MyBarChart> {
         extraLinesData: ExtraLinesData(
           horizontalLines: [
             HorizontalLine(
-              y: average,
+              y: average / mod,
               color: Colors.grey.withOpacity(0.2),
               strokeWidth: 1,
               // dashArray: [6,6]

@@ -1,8 +1,9 @@
 /// 統計頁：預留頁面，尚未實作圖表或統計摘要（目前為佔位內容）
 import 'dart:math';
 
-import 'package:exp02/components/bar_chart.dart';
-import 'package:exp02/components/pie_chart.dart';
+import 'package:exp02/components/chart/bar_chart.dart';
+import 'package:exp02/components/chart/pie_chart.dart';
+import 'package:exp02/components/type_view.dart';
 import 'package:exp02/models/color.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,13 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  List<double> pieData = [0.0, 0.0, 0.0];
+  Map<String,int> mp = {"交通": 2, "娛樂": 1, "伙食": 0};
+  List<(double, String, IconData)> week_items = [
+    (0.0, "伙食", Icons.emoji_food_beverage),
+    (0.0, "娛樂", Icons.videogame_asset),
+    (0.0, "交通", Icons.directions_car_filled),
+  ];
+  List<(double, double)> pieData = [];
   List<Day?> items = [];
 
   double totalWeek = 0.0;
@@ -48,11 +55,10 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
 
   void getData() async {
     final provider = context.read<ExpenseProvider>();
+
     await Future.microtask(() => provider.setFirstDate());
-    if (provider.monthData.isEmpty) {
-      await Future.microtask(() => provider.setAllMonthData());
-    }
-    await Future.microtask(() => provider.setNowMonth());
+    if (provider.monthData.isEmpty) await Future.microtask(() => provider.setAllMonthData());
+    if(provider.nowMonthData.isEmpty) await Future.microtask(() => provider.setNowMonth());
 
     getNowWeekData();
     setPieChartData();
@@ -101,7 +107,7 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
 
   void setPieChartData() async {
     var expenseData = Provider.of<ExpenseProvider>(context, listen: false);
-    pieData = [0.0, 0.0, 0.0];
+    pieData = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)];
 
     if(expenseData.nowMonthData.isNotEmpty) {
       var tags = ["娛樂", "交通", "伙食"];
@@ -111,7 +117,13 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
         for(var day in expenseData.nowMonthData) {
           for(var item in day.items) {
             if(tag == item.tags) {
-              pieData[idx] += item.amount;
+              pieData[idx] = (pieData[idx].$1 + item.amount, 0.0);
+              var tmp = week_items[mp[item.tags] ?? 0];
+              week_items[mp[item.tags] ?? 0] = (
+                tmp.$1 + item.amount,
+                tmp.$2,
+                tmp.$3,
+              );
             }
           }
         }
@@ -121,7 +133,7 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
 
       var t = getMonthTotalExpense(expenseData, DateTime.now());
       for(int i=0; i<3; i++) {
-        pieData[i] /= t;
+        pieData[i] = (pieData[i].$1, pieData[i].$1 / t);
       }
 
       setState(() {});
@@ -132,170 +144,175 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var expenseData = Provider.of<ExpenseProvider>(context);
     var myColor = Provider.of<MyColor>(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20, top: 90),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 頂部標題列（左：返回＋「記帳」、右：設定圖示）
-          Stack(
-            alignment: Alignment.center,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 30, right: 30, top: 90),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text("每週結算",style: TextStyle(fontSize: 14, color: Colors.black54)),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: Container(
-                  width: 35,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    color: myColor.item,
-                    borderRadius: BorderRadius.circular(1000),
+              // 頂部標題列（左：返回＋「記帳」、右：設定圖示）
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text("每週結算",style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Container(
+                      width: 35,
+                      height: 35,
+                      decoration: BoxDecoration(
+                        color: myColor.item,
+                        borderRadius: BorderRadius.circular(1000),
+                      ),
+                      child: Icon(Icons.refresh, color: Colors.black, size: 20,),
+                    ),
                   ),
-                  child: Icon(Icons.refresh, color: Colors.black, size: 20,),
+                ],
+              ),
+
+              SizedBox(
+                width: 360,
+                height: 200,
+                child: AnimatedBuilder(
+                  animation: _animation,
+                  builder: (BuildContext context, Widget? child) {
+                    return CustomPaint(
+                        painter: ChartPainter(
+                          context: context,
+                          progress: _animation.value,
+                          value: totalWeek / tg,
+                          total: totalWeek,
+                        )
+                    );
+                  },
                 ),
               ),
-            ],
-          ),
 
-          SizedBox(
-            width: 360,
-            height: 200,
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (BuildContext context, Widget? child) {
-                return CustomPaint(
-                    painter: ChartPainter(
-                      context: context,
-                      progress: _animation.value,
-                      value: totalWeek / tg,
-                      total: totalWeek,
-                    )
-                );
-              },
-            ),
-          ),
+              /*
+              Container(
+                padding: const EdgeInsets.only(top: 10, bottom: 15),
+                alignment: Alignment.centerLeft,
+                child: Text("  詳細資訊")
+              ),
+              */
+              SizedBox(height: 24,),
 
-          /*
-          Container(
-            padding: const EdgeInsets.only(top: 10, bottom: 15),
-            alignment: Alignment.centerLeft,
-            child: Text("  詳細資訊")
-          ),
-          */
-          SizedBox(height: 24,),
-
-          Container(
-            width: 360,
-            height: 100,
-            decoration: BoxDecoration(
-              color: myColor.item, // myColor.any_item,
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-
-          SizedBox(height: 16,),
-
-          Container(
-            width: 360,
-            height: 280,
-            decoration: BoxDecoration(
-              color: myColor.item, // myColor.any_item,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            alignment: AlignmentDirectional.topCenter,
-            padding: const EdgeInsets.only(top: 15, left: 0, right: 0),
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isWeek = !isWeek;
-                    });
-                  },
-                  child: Container(
-                    width: 310,
-                    height: 35,
-                    decoration: BoxDecoration(
-                      color: myColor.cal_grey,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        AnimatedPositioned(
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.fastOutSlowIn,
-                          left: isWeek ? 4.0 : 156.0, // 根據狀態改變 left
-                          child: Container(
-                            width: 150,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: myColor.item,
-                              borderRadius: BorderRadius.circular(20)
-                            ),
-                          ),
+              Container(
+                width: 360,
+                height: 280,
+                decoration: BoxDecoration(
+                  color: myColor.item, // myColor.any_item,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: AlignmentDirectional.topCenter,
+                padding: const EdgeInsets.only(top: 15, left: 0, right: 0),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isWeek = !isWeek;
+                        });
+                      },
+                      child: Container(
+                        width: 310,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: myColor.cal_grey,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.only(left: 57),
-                              child: Text("Week", style: TextStyle(color: (isWeek) ? Colors.black87 : Colors.grey),),
+                            AnimatedPositioned(
+                              duration: Duration(milliseconds: 300),
+                              curve: Curves.fastOutSlowIn,
+                              left: isWeek ? 4.0 : 156.0, // 根據狀態改變 left
+                              child: Container(
+                                width: 150,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: myColor.item,
+                                  borderRadius: BorderRadius.circular(20)
+                                ),
+                              ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.only(right: 55),
-                              child: Text("Month", style: TextStyle(color: (!isWeek) ? Colors.black87 : Colors.grey),),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.only(left: 62),
+                                  child: Text("本週", style: TextStyle(color: (isWeek) ? Colors.black87 : Colors.grey),),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.only(right: 62),
+                                  child: Text("本月", style: TextStyle(color: (!isWeek) ? Colors.black87 : Colors.grey),),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
-                      ],
+                        )
+                      ),
+                    ),
+
+                    // 圖表部分
+                    Container(
+                      margin: const EdgeInsets.only(top: 40, bottom: 10, left: 10, right: 10),
+                      height: 160,
+                      // color: Colors.yellow,
+                      child: (isWeek) ? MyBarChart(items: items,) : MyPieChart(items: pieData,)
                     )
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16,),
+
+
+              /*
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 166,
+                    height: 87,
+                    decoration: BoxDecoration(
+                      color: myColor.item, // myColor.any_item,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                ),
 
-                // 圖表部分
-                Container(
-                  margin: const EdgeInsets.only(top: 40, bottom: 10, left: 10, right: 10),
-                  height: 160,
-                  // color: Colors.yellow,
-                  child: (isWeek) ? MyBarChart(items: items,) : MyPieChart(items: pieData,)
-                )
-              ],
-            ),
-          ),
-
-          // SizedBox(height: 16,),
-
-
-          /*
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 166,
-                height: 87,
-                decoration: BoxDecoration(
-                  color: myColor.item, // myColor.any_item,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-
-              Container(
-                width: 166,
-                height: 87,
-                decoration: BoxDecoration(
-                  color: myColor.item, // myColor.any_item,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  Container(
+                    width: 166,
+                    height: 87,
+                    decoration: BoxDecoration(
+                      color: myColor.item, // myColor.any_item,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ],
+              ) */
             ],
-          ) */
-        ],
-      ),
+          ),
+        ),
+
+        Container(
+          height: 100,
+          margin: const EdgeInsets.only(bottom: 20),
+          child: MyTypePage(totalWeek: totalWeek, items: week_items,)
+        ),
+      ],
     );
   }
 }

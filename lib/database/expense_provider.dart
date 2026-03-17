@@ -26,7 +26,7 @@ class ExpenseProvider with ChangeNotifier {
 
   final DatabaseHelper _helper = DatabaseHelper();
 
-  /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthData
+  /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthDataㄉˋ
   Future<void> setAllMonthData() async {
     DateTime nowDate = DateTime.now();
     // [!AI] 移除多餘的 getAll()：原本先全表讀取，但實際上未使用，且會造成重複 IO。
