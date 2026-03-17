@@ -1,10 +1,10 @@
 {
     "name": "exp02",
     "short_name": "exp02",
-    "start_url": ".",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "theme_color": "#F5F5F5",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
