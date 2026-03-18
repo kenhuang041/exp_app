@@ -11,9 +11,10 @@ import 'package:exp02/pages/home_page.dart';
 import 'package:exp02/pages/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 應用程式進入點：初始化 Flutter 綁定後啟動 [MyApp]。
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
@@ -70,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 46, vertical: 20),
+          padding: const EdgeInsets.only(left: 46, right: 46, bottom: 20, top: 20),
           child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -83,15 +84,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       provider.setIndex(0);
                     });
                   },
-                  child: Column(
-                    children: [
-                      Icon(Icons.home, size: 24, color: (now == 0) ? Colors.black87 : my_color.hint2),
-                      SizedBox(height: 2,),
-                      Text("首頁", style: TextStyle(fontSize: 12, color: (now == 0) ? Colors.black87 : my_color.hint2),)
-                    ],
+                  child: Container(
+                    width: 50,
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        Icon(Icons.home, size: 24, color: (now == 0) ? Colors.black87 : my_color.hint2),
+                        SizedBox(height: 2,),
+                        Text("首頁", style: TextStyle(fontSize: 12, color: (now == 0) ? Colors.black87 : my_color.hint2),)
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(width: 25,),
+                SizedBox(width: 35),
                 // 日曆 Tab
                 GestureDetector(
                   onTap: () {
@@ -99,15 +104,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       provider.setIndex(1);
                     });
                   },
-                  child: Column(
-                    children: [
-                      Icon(Icons.calendar_today, size: 24, color: (now == 1) ? Colors.black87 : my_color.hint2),
-                      SizedBox(height: 2,),
-                      Text("日曆", style: TextStyle(fontSize: 12, color: (now == 1) ? Colors.black87 : my_color.hint2),)
-                    ],
+                  child: Container(
+                    width: 50,
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        Icon(Icons.calendar_today, size: 24, color: (now == 1) ? Colors.black87 : my_color.hint2),
+                        SizedBox(height: 2,),
+                        Text("日曆", style: TextStyle(fontSize: 12, color: (now == 1) ? Colors.black87 : my_color.hint2),)
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(width: 25,),
+                SizedBox(width: 35,),
                 // 統計 Tab
                 GestureDetector(
                   onTap: () {
@@ -115,15 +124,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       provider.setIndex(2);
                     });
                   },
-                  child: Column(
-                    children: [
-                      Icon(Icons.analytics, size: 24, color: (now == 2) ? Colors.black87 : my_color.hint2),
-                      SizedBox(height: 2,),
-                      Text("統計", style: TextStyle(fontSize: 12, color: (now == 2) ? Colors.black87 : my_color.hint2),)
-                    ],
+                  child: Container(
+                    width: 50,
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        Icon(Icons.analytics, size: 24, color: (now == 2) ? Colors.black87 : my_color.hint2),
+                        SizedBox(height: 2,),
+                        Text("統計", style: TextStyle(fontSize: 12, color: (now == 2) ? Colors.black87 : my_color.hint2),)
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(width: 25,),
+
+                SizedBox(width: 35,),
                 // 設定 Tab
                 GestureDetector(
                   onTap: () {
@@ -131,12 +145,16 @@ class _MyHomePageState extends State<MyHomePage> {
                       provider.setIndex(3);
                     });
                   },
-                  child: Column(
-                    children: [
-                      Icon(Icons.settings, size: 24, color: (now == 3) ? Colors.black87 : my_color.hint2),
-                      SizedBox(height: 2,),
-                      Text("設定", style: TextStyle(fontSize: 12, color: (now == 3) ? Colors.black87 : my_color.hint2),)
-                    ],
+                  child: Container(
+                    width: 50,
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        Icon(Icons.settings, size: 24, color: (now == 3) ? Colors.black87 : my_color.hint2),
+                        SizedBox(height: 2,),
+                        Text("設定", style: TextStyle(fontSize: 12, color: (now == 3) ? Colors.black87 : my_color.hint2),)
+                      ],
+                    ),
                   ),
                 ),
               ],

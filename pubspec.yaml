@@ -41,6 +41,7 @@ dependencies:
   flutter_staggered_animations: ^1.0.0
   fl_chart: ^0.71.0
   flutter_exit_app: ^2.0.0
+  shared_preferences: ^2.5.1
 
 dev_dependencies:
   flutter_test:

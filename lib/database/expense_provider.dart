@@ -4,7 +4,7 @@
 
 import 'package:exp02/models/transaction.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_exit_app/flutter_exit_app.dart';
+import 'package:collection/collection.dart';
 import 'db_helper.dart';
 
 class ExpenseProvider with ChangeNotifier {
@@ -17,17 +17,17 @@ class ExpenseProvider with ChangeNotifier {
   /// 當前選定日期的當日收支資料（首頁用）
   Day? _nowData;
   /// 當日淨額（收入－支出）
-  double? _totalCost;
+  double _totalWeek = 0.0;
 
   Map<DateTime, List<Day>> get monthData => _monthData;
   List<Day> get nowMonthData => _nowMonthData;
   Day? get nowData => _nowData;
-  double? get totalCost => _totalCost;
+  double? get totalWeek => _totalWeek;
   DateTime get firstDate => _firstDate;
 
   final DatabaseHelper _helper = DatabaseHelper();
 
-  /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthDataㄉˋ
+  /// 從資料庫載入從 _firstDate 到當月為止的每個月份資料，填入 _monthData
   Future<void> setAllMonthData() async {
     DateTime nowDate = DateTime.now();
     // [!AI] 移除多餘的 getAll()：原本先全表讀取，但實際上未使用，且會造成重複 IO。
@@ -89,18 +89,27 @@ class ExpenseProvider with ChangeNotifier {
       _monthData[monthKey]![now.day - 1] = _nowData!;
     }
 
-    countTotalCost();
+    countWeek();
     notifyListeners();
   }
 
   /// 依 _nowData 計算當日淨額（收入－支出）並寫入 _totalCost
-  void countTotalCost() {
-    if(_nowData == null) {
-      _totalCost = 0;
-      return;
+  void countWeek() {
+    _totalWeek = 0;
+
+    DateTime now = DateTime.now();
+    DateTime tmp = now.subtract(Duration(days: now.weekday - 1));
+
+    for(int i=0; i<7; i++) {
+      Day? tmpDay = _nowMonthData.firstWhereOrNull(
+            (x) => x.date.year == tmp.year &&
+            x.date.month == tmp.month &&
+            x.date.day == tmp.day,
+      );
+
+      _totalWeek += (tmpDay != null) ? (tmpDay.totalIncome - tmpDay.totalExpense) : 0.0;
+      tmp = tmp.add(const Duration(days: 1));
     }
-    double total = _nowData!.totalIncome - _nowData!.totalExpense;
-    _totalCost = total;
   }
 
   /// 新增一筆交易並刷新當日資料

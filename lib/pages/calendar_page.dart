@@ -126,7 +126,7 @@ class _MyCalendarPageState extends State<MyCalendarPage> {
                   height: 45,
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.only(bottom: 0),
-                  child: Text((now.year != now_standard.year || now.month != now_standard.month) ? "" : now_standard.day.toString(), style: TextStyle(color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold),),
+                  child: Text(now.day.toString(), style: TextStyle(color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold),),
                 ),
 
                 Row(

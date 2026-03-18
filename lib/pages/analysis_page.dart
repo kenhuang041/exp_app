@@ -22,6 +22,7 @@ class MyAnalysisPage extends StatefulWidget {
 
 class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  late PageController _controller2;
   late Animation<double> _animation;
 
   Map<String,int> mp = {"交通": 2, "娛樂": 1, "伙食": 0};
@@ -34,12 +35,14 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
   List<Day?> items = [];
 
   double totalWeek = 0.0;
-  double tg = 1500.0;
+  double tg = 300.0;
+  double tg2 = 1000.0;
   bool isWeek = true;
 
   @override
   void initState() {
     super.initState();
+    _controller2 = PageController(initialPage: 0);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800)
@@ -50,7 +53,6 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
     );
 
     _controller.forward();
-
     getData();
   }
 
@@ -147,6 +149,7 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
   @override
   void dispose() {
     _controller.dispose();
+    _controller2.dispose();
     super.dispose();
   }
 
@@ -200,8 +203,8 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
                         painter: ChartPainter(
                           context: context,
                           progress: _animation.value,
-                          value: totalWeek / tg,
-                          total: totalWeek,
+                          value: (expenseData.totalWeek ?? 0) / tg,
+                          total: (expenseData.totalWeek ?? 0),
                         )
                     );
                   },
@@ -232,6 +235,11 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
                       onTap: () {
                         setState(() {
                           isWeek = !isWeek;
+                          _controller2.animateToPage(
+                            (isWeek ? 0 : 1),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutQuart
+                          );
                         });
                       },
                       child: Container(
@@ -277,10 +285,23 @@ class _MyAnalysisPageState extends State<MyAnalysisPage> with SingleTickerProvid
 
                     // 圖表部分
                     Container(
-                      margin: const EdgeInsets.only(top: 40, bottom: 10, left: 10, right: 10),
-                      height: 160,
-                      // color: Colors.yellow,
-                      child: (isWeek) ? MyBarChart(items: items,) : MyPieChart(items: pieData,)
+                      margin: const EdgeInsets.only(top: 20, bottom: 10, left: 10, right: 10),
+                      height: 190,
+                      child: PageView(
+                        controller: _controller2,
+                        onPageChanged: (idx) {
+                          setState(() {
+                            isWeek = (idx==0?true:false);
+                          });
+                        },
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: MyBarChart(items: items),
+                          ),
+                          MyPieChart(items: pieData,)
+                        ],
+                      )
                     )
                   ],
                 ),
@@ -345,7 +366,7 @@ class ChartPainter extends CustomPainter {
     var center = Offset(size.width/2, size.height/2 + 60.0);
     double r = 110.0;
     double start = pi;
-    double sweep = pi * (value * progress);
+    double sweep = (pi * (value * progress)).clamp(0, pi);
 
     canvas.drawArc(Rect.fromCircle(center: center, radius: r), start, pi, false, paint);
     paint.color = myColor.blue;
@@ -354,14 +375,14 @@ class ChartPainter extends CustomPainter {
     _drawText(
       canvas,
       Offset(center.dx, center.dy - 40),
-      "${(value * 100).toInt()}%",
+      "${(value * 100).toInt().clamp(0, 100)}%",
       TextStyle(color: Colors.black87.withOpacity((progress - 0.2).clamp(0.0, 1.0)), fontSize: 32, fontWeight: FontWeight.bold),
     );
 
     _drawText(
       canvas,
       Offset(center.dx, center.dy),
-      "目前共花費 ${total.toInt()} 元",
+      "目前能賺到 ${total.toInt()} 元",
       TextStyle(color: Colors.black12.withOpacity((progress - 0.2).clamp(0.0, 1.0)), fontSize: 14),
     );
   }

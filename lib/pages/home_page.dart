@@ -31,9 +31,19 @@ class _MyExpensePageState extends State<MyExpensePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<ExpenseProvider>().setDayData(DateTime.now()));
+    getData();
   }
 
+  void getData() async {
+    var provider = Provider.of<ExpenseProvider>(context, listen: false);
+
+    await Future.microtask(() => provider.setFirstDate());
+    if(provider.monthData.isEmpty) await Future.microtask(() => provider.setAllMonthData());
+    if(provider.nowMonthData.isEmpty) await Future.microtask(() => provider.setNowMonth());
+
+    await Future.microtask(() => provider.setDayData(DateTime.now()));
+  }
+  
   @override
   Widget build(BuildContext context) {
     var my_color = Provider.of<MyColor>(context);
@@ -114,7 +124,7 @@ class _MyExpensePageState extends State<MyExpensePage> {
                 children: [
                   Text("剩餘金額", style: TextStyle(color: my_color.text, fontSize: 12),),
                   Text(
-                    (expense_data.nowData == null) ? "" : "\$${expense_data.totalCost}",
+                    (expense_data.nowData == null) ? "" : "\$${expense_data.totalWeek}",
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 32,
@@ -138,6 +148,33 @@ class _MyExpensePageState extends State<MyExpensePage> {
                 decoration: BoxDecoration(
                   color: my_color.item,
                   borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.only(left: 18),
+                child: Row(
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("今日支出", style: TextStyle(color: my_color.text, fontSize: 13),),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (expense_data.nowData == null) ? "" : "\$${expense_data.nowData?.totalExpense ?? 100.0}",
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                            // SizedBox(width: 8,),
+                            // Icon(Icons.directions_car_filled, size: 28,)
+                          ],
+                        )
+                      ],
+                    ),
+                  ],
                 ),
               ),
 

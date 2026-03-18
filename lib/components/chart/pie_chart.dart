@@ -110,9 +110,9 @@ class PieChartPainter extends CustomPainter {
       );
     }
 
-    _drawIcon(canvas, Colors.white, Offset(center.dx + 86, center.dy - 38), Icons.emoji_food_beverage);
-    _drawIcon(canvas, Colors.white, Offset(center.dx + 86, center.dy + 4), Icons.directions_car_filled);
-    _drawIcon(canvas, Colors.white, Offset(center.dx + 86, center.dy + 51), Icons.videogame_asset);
+    _drawIcon(canvas, Colors.white, Offset(center.dx, center.dy - 66), Icons.emoji_food_beverage);
+    _drawIcon(canvas, Colors.white, Offset(center.dx, center.dy - 45), Icons.directions_car_filled);
+    _drawIcon(canvas, Colors.white, Offset(center.dx, center.dy - 22), Icons.videogame_asset);
 
     var pos = Offset(center.dx - 214, center.dy - 65); // 120
     _drawText(canvas, pos, "\$${total}", TextStyle(color: Colors.black26.withOpacity(progress.clamp(0.0, 1.0)), fontSize: 28.0,));
@@ -166,8 +166,8 @@ class PieChartPainter extends CustomPainter {
     tp.layout();
 
     var pos = Offset(
-        center.dx/2 - tp.width,
-        center.dy/2 - tp.height
+        center.dx - tp.width/2 + 1,
+        center.dy - tp.height/2,
     );
 
     tp.paint(canvas, pos);
