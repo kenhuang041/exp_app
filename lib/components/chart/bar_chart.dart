@@ -30,9 +30,32 @@ class _MyBarChartState extends State<MyBarChart> {
   @override
   Widget build(BuildContext context) {
     var myColor = Provider.of<MyColor>(context);
+    List<Day?> _items;
+
+    if (widget.items.isEmpty) {
+      DateTime now = DateTime.now();
+      DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+
+      _items = List.generate(7, (index) {
+        return Day(
+          date: startOfWeek.add(Duration(days: index)),
+          items: [], // 空的交易列表
+        );
+      });
+    } else {
+      // 3. 如果不為空，複製一份出來，方便後續補全 null
+      _items = List.from(widget.items);
+    }
+
     double average = widget.items.fold(0.0, (sum, item) => sum + (item?.totalExpense ?? 0.0));
     double mx = 500.0, spec = 100.0, mod=0;
-    for(var day in widget.items) {
+
+    DateTime begin = _items[0]?.date ?? DateTime.now();
+
+    for(int i=0; i<_items.length; i++) {
+      if(_items[i] == null) _items[i] = Day(date: begin.add(Duration(days: i)), items: []);
+      var day = _items[i];
+
       mx = max(mx, (day == null) ? 0.0 : day.totalExpense);
       if(day!.items.isNotEmpty) mod = max(1, mod+1);
     }
@@ -41,7 +64,7 @@ class _MyBarChartState extends State<MyBarChart> {
     // debugPrint('Build triggered by: ${context.widget.runtimeType}');
 
     return BarChart(
-      key: ValueKey(widget.items.length),
+      key: ValueKey(_items.length),
       swapAnimationDuration: const Duration(milliseconds: 600),
       swapAnimationCurve: Curves.bounceOut,
 
@@ -54,7 +77,7 @@ class _MyBarChartState extends State<MyBarChart> {
         titlesData: _buildTitles(spec), // 設定座標軸標籤
         extraLinesData: ExtraLinesData(
           horizontalLines: [
-            HorizontalLine(
+            (mod!=0) ? HorizontalLine(
               y: average / mod,
               color: Colors.grey.withOpacity(0.2),
               strokeWidth: 1,
@@ -69,12 +92,12 @@ class _MyBarChartState extends State<MyBarChart> {
                   fontWeight: FontWeight.bold,
                 ),
               )
-            )
+            ) : HorizontalLine(y: 1, color: Colors.transparent)
           ]
         ),
 
         // bar
-        barGroups: widget.items.mapIndexed((idx,x) =>
+        barGroups: _items.mapIndexed((idx,x) =>
             _makeGroupData(idx, (x == null) ? 10 : x.totalExpense, myColor, _startAnimation)
         ).toList(),
 
